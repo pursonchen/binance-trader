@@ -16,4 +16,4 @@ PROXY_URL=
 
 
 ## Caution
-- self design pkg must be put in the GOROOT/src/github.com/pursonchen/xxx 
+- self design pkg must be put in the GOPATH/src/github.com/pursonchen/xxx 

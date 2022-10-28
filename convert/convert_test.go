@@ -3,6 +3,7 @@ package convert
 import (
 	"context"
 	"github.com/pursonchen/go-binance/v2"
+	"github.com/smartystreets/goconvey/convey"
 	"os"
 	"testing"
 )
@@ -26,6 +27,8 @@ func TestEstQuote(t *testing.T) {
 		if err != nil {
 			t.Fatalf(`test EstQuote fail %s`, err.Error())
 		}
+
+		convCtx.So(resp.Price, convey.ShouldNotBeEmpty, 0)
 	})
 
 }
