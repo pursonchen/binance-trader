@@ -3,9 +3,10 @@ module github.com/pursonchen/binance-trader
 go 1.18
 
 require (
+	github.com/jinzhu/copier v0.3.5
+	github.com/joho/godotenv v1.4.0
 	github.com/pursonchen/go-binance/v2 v2.2.1
 	github.com/smartystreets/goconvey v1.7.2
-	github.com/joho/godotenv v1.4.0
 )
 
 require (

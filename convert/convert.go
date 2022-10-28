@@ -3,6 +3,7 @@ package convert
 import (
 	"context"
 	"errors"
+	"github.com/jinzhu/copier"
 	"github.com/pursonchen/go-binance/v2"
 )
 
@@ -26,14 +27,14 @@ type EstQuoteResp struct {
 
 var StableCoins = [2]string{"USDT", "BUSD"}
 
-func (c *SpotClient) EstQuote(ctx context.Context, params *EstQuoteReq) (*EstQuoteResp, error) {
+func (c *SpotClient) EstQuote(ctx context.Context, req *EstQuoteReq) (*EstQuoteResp, error) {
 
 	// 目前支持稳定币兑换
-	if params.BaseCcy != StableCoins[0] && params.QuoteCcy != StableCoins[0] {
+	if req.BaseCcy != StableCoins[0] && req.QuoteCcy != StableCoins[0] {
 		return nil, errors.New("coin not support")
 	}
 
-	res, err := c.binanceSpotClient.NewAveragePriceService().Symbol(params.BaseCcy + params.QuoteCcy).Do(ctx)
+	res, err := c.binanceSpotClient.NewAveragePriceService().Symbol(req.BaseCcy + req.QuoteCcy).Do(ctx)
 
 	if err != nil {
 		return nil, err
@@ -67,11 +68,10 @@ SELL 卖出
 */
 
 type TradeReq struct {
-	Symbol    string  `json:"symbol"`
-	Side      string  `json:"side"`
-	Type      string  `json:"type"`
-	Quantity  float64 `json:"quantity"`
-	Timestamp int64   `json:"timestamp"`
+	Symbol   string           `json:"symbol"`
+	Side     binance.SideType `json:"side"` // BUY SELL
+	Type     string           `json:"type"`
+	Quantity string           `json:"quantity"`
 }
 
 type TradeResp struct {
@@ -99,18 +99,131 @@ type TradeResp struct {
 	} `json:"fills"`
 }
 
-func (c *SpotClient) Trade(ctx context.Context, param *TradeReq) (*TradeResp, error) {
-	return &TradeResp{}, nil
+func (c *SpotClient) Trade(ctx context.Context, req *TradeReq) (*TradeResp, error) {
+
+	order, err := c.binanceSpotClient.NewCreateOrderService().Symbol(req.Symbol).
+		Side(req.Side).Type(binance.OrderTypeMarket).TimeInForce(binance.TimeInForceTypeGTC).
+		Quantity(req.Quantity).Do(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var resp *TradeResp
+
+	copier.Copy(&resp, order)
+
+	return resp, nil
 }
 
-func (c *SpotClient) OrderList(ctx context.Context) {
-
+type GetOrderReq struct {
+	Symbol  string `json:"symbol"`
+	OrderId int64  `json:"orderId"`
 }
 
-func (c *SpotClient) CancelOrderList(ctx context.Context) {
-
+type GetOrderResp struct {
+	Symbol              string `json:"symbol"`
+	OrderId             int64  `json:"orderId"`
+	OrderListId         int64  `json:"orderListId"`
+	ClientOrderId       string `json:"clientOrderId"`
+	Price               string `json:"price"`
+	OrigQty             string `json:"origQty"`
+	ExecutedQty         string `json:"executedQty"`
+	CummulativeQuoteQty string `json:"cummulativeQuoteQty"`
+	Status              string `json:"status"`
+	TimeInForce         string `json:"timeInForce"`
+	Type                string `json:"type"`
+	Side                string `json:"side"`
+	StopPrice           string `json:"stopPrice"`
+	IcebergQty          string `json:"icebergQty"`
+	Time                int64  `json:"time"`
+	UpdateTime          int64  `json:"updateTime"`
+	IsWorking           bool   `json:"isWorking"`
+	OrigQuoteOrderQty   string `json:"origQuoteOrderQty"`
 }
 
-func (c *SpotClient) CancelOrder(ctx context.Context) {
+func (c *SpotClient) getOrder(ctx context.Context, req *GetOrderReq) (*GetOrderResp, error) {
+	order, err := c.binanceSpotClient.NewGetOrderService().Symbol(req.Symbol).OrderID(req.OrderId).Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var resp *GetOrderResp
+	copier.Copy(&resp, order)
 
+	return resp, err
+}
+
+type OrderListReq struct {
+	Symbol    string `json:"symbol"`
+	StartTime int64  `json:"startTime,omitempty"`
+	EndTime   int64  `json:"endTime,omitempty"`
+	Limit     int    `json:"limit"`
+}
+
+type OrderListResp struct {
+	Data []*binance.Order `json:"data"`
+}
+
+func (c *SpotClient) OrderList(ctx context.Context, req *OrderListReq) (*OrderListResp, error) {
+
+	list, err := c.binanceSpotClient.NewListOrdersService().Symbol(req.Symbol).Limit(req.Limit).Do(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var resp []*binance.Order
+	for _, li := range list {
+		resp = append(resp, li)
+	}
+
+	return &OrderListResp{Data: resp}, nil
+}
+
+func (c *SpotClient) HangOrderList(ctx context.Context) (*OrderListResp, error) {
+
+	list, err := c.binanceSpotClient.NewListOpenOrdersService().Do(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var resp []*binance.Order
+	for _, li := range list {
+		resp = append(resp, li)
+	}
+
+	return &OrderListResp{Data: resp}, nil
+}
+
+type CancelReq struct {
+	Symbol  string `json:"symbol"`
+	OrderId int64  `json:"orderId"`
+}
+
+type CancelResp struct {
+	Symbol              string `json:"symbol"`
+	OrigClientOrderId   string `json:"origClientOrderId"`
+	OrderId             int    `json:"orderId"`
+	OrderListId         int    `json:"orderListId"`
+	ClientOrderId       string `json:"clientOrderId"`
+	Price               string `json:"price"`
+	OrigQty             string `json:"origQty"`
+	ExecutedQty         string `json:"executedQty"`
+	CummulativeQuoteQty string `json:"cummulativeQuoteQty"`
+	Status              string `json:"status"`
+	TimeInForce         string `json:"timeInForce"`
+	Type                string `json:"type"`
+	Side                string `json:"side"`
+}
+
+func (c *SpotClient) CancelOrder(ctx context.Context, req *CancelReq) (*CancelResp, error) {
+	order, err := c.binanceSpotClient.NewCancelOrderService().Symbol(req.Symbol).OrderID(req.OrderId).Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var resp *CancelResp
+	copier.Copy(&resp, order)
+
+	return resp, nil
 }

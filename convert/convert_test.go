@@ -16,6 +16,7 @@ func TestMain(m *testing.M) {
 	if err := godotenv.Load("../.env"); err != nil {
 		log.Fatal("Error loading .env file")
 	}
+	//binance.UseTestnet = true
 	binanceClient := binance.NewProxiedClient(os.Getenv("BINANCE_API_KEY"), os.Getenv("BINANCE_SECRET_KEY"), os.Getenv("PROXY_URL"))
 	sCli = NewSpotClient(binanceClient)
 	os.Exit(m.Run())
