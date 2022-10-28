@@ -29,7 +29,7 @@ var StableCoins = [2]string{"USDT", "BUSD"}
 func (c *SpotClient) EstQuote(ctx context.Context, params *EstQuoteReq) (*EstQuoteResp, error) {
 
 	// 目前支持稳定币兑换
-	if params.BaseCcy != StableCoins[0] || params.QuoteCcy != StableCoins[0] {
+	if params.BaseCcy != StableCoins[0] && params.QuoteCcy != StableCoins[0] {
 		return nil, errors.New("coin not support")
 	}
 
