@@ -17,3 +17,4 @@ PROXY_URL=
 
 ## Caution
 - self design pkg must be put in the GOPATH/src/github.com/pursonchen/xxx 
+- **var \*Type** can't alloc mem but **param := new(Type)** And var Type

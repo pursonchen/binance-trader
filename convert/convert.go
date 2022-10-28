@@ -3,8 +3,10 @@ package convert
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/jinzhu/copier"
 	"github.com/pursonchen/go-binance/v2"
+	"strconv"
 )
 
 type SpotClient struct {
@@ -70,50 +72,102 @@ SELL 卖出
 type TradeReq struct {
 	Symbol   string           `json:"symbol"`
 	Side     binance.SideType `json:"side"` // BUY SELL
-	Type     string           `json:"type"`
 	Quantity string           `json:"quantity"`
 }
 
 type TradeResp struct {
-	Symbol              string `json:"symbol"`
-	OrderId             int    `json:"orderId"`
-	OrderListId         int    `json:"orderListId"`
-	ClientOrderId       string `json:"clientOrderId"`
-	TransactTime        int64  `json:"transactTime"`
-	Price               string `json:"price"`
-	OrigQty             string `json:"origQty"`
-	ExecutedQty         string `json:"executedQty"`
-	CummulativeQuoteQty string `json:"cummulativeQuoteQty"`
-	Status              string `json:"status"`
-	TimeInForce         string `json:"timeInForce"`
-	Type                string `json:"type"`
-	Side                string `json:"side"`
-	StrategyId          int    `json:"strategyId"`
-	StrategyType        int    `json:"strategyType"`
-	Fills               []struct {
-		Price           string `json:"price"`
-		Qty             string `json:"qty"`
-		Commission      string `json:"commission"`
-		CommissionAsset string `json:"commissionAsset"`
-		TradeId         int    `json:"tradeId"`
-	} `json:"fills"`
+	Symbol                   string                  `json:"symbol"`
+	OrderID                  int64                   `json:"orderId"`
+	ClientOrderID            string                  `json:"clientOrderId"`
+	TransactTime             int64                   `json:"transactTime"`
+	Price                    string                  `json:"price"`
+	OrigQuantity             string                  `json:"origQty"`
+	ExecutedQuantity         string                  `json:"executedQty"`
+	CummulativeQuoteQuantity string                  `json:"cummulativeQuoteQty"`
+	IsIsolated               bool                    `json:"isIsolated"`
+	Status                   binance.OrderStatusType `json:"status"`
+	TimeInForce              binance.TimeInForceType `json:"timeInForce"`
+	Type                     binance.OrderType       `json:"type"`
+	Side                     binance.SideType        `json:"side"`
+	Fills                    []*binance.Fill         `json:"fills"`
+	MarginBuyBorrowAmount    string                  `json:"marginBuyBorrowAmount"`
+	MarginBuyBorrowAsset     string                  `json:"marginBuyBorrowAsset"`
 }
 
 func (c *SpotClient) Trade(ctx context.Context, req *TradeReq) (*TradeResp, error) {
 
+	// check symbol quantity filters
+	/*
+		名义价值过滤器(NOTIONAL)定义了订单在一个交易对上可以下单的名义价值区间.
+
+		applyMinToMarket 定义了 minNotional 是否适用于市价单(MARKET)
+		applyMaxToMarket 定义了 maxNotional 是否适用于市价单(MARKET).
+
+		要通过此过滤器, 订单的名义价值 (单价 x 数量, price * quantity) 需要满足如下条件:
+
+		price * quantity <= maxNotional
+		price * quantity >= minNotional
+		对于市价单(MARKET), 用于计算的价格采用的是在 avgPriceMins 定义的时间之内的平均价.
+		如果 avgPriceMins 为 0, 则采用最新的价格.
+	*/
+	exchangeInfo, err := c.binanceSpotClient.NewExchangeInfoService().Symbol(req.Symbol).Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var minNotional string
+
+	if len(exchangeInfo.Symbols) == 0 || exchangeInfo.Symbols == nil {
+		return nil, errors.New("exchangeInfo.Symbols fail")
+	}
+
+	for _, filter := range exchangeInfo.Symbols[0].Filters {
+		if filter["filterType"] == "MIN_NOTIONAL" {
+			minNotional = filter["minNotional"].(string)
+		}
+	}
+
+	baseAsset := exchangeInfo.Symbols[0].BaseAsset   // LUNC
+	quoteAsset := exchangeInfo.Symbols[0].QuoteAsset // BUSD
+	var quoteQuantity string
+
+	if req.Side == "BUY" {
+		fMinNotional, _ := strconv.ParseFloat(minNotional, 64)
+		fQuantity, _ := strconv.ParseFloat(req.Quantity, 64)
+		if fQuantity < fMinNotional {
+			return nil, errors.New(fmt.Sprintf("quantity less than min notional : %s %s < %s %s", req.Quantity, quoteAsset, minNotional, quoteAsset))
+		}
+		quoteQuantity = req.Quantity
+
+	} else {
+		res, err := c.binanceSpotClient.NewAveragePriceService().Symbol(req.Symbol).Do(ctx)
+		if err != nil {
+			return nil, err
+		}
+		fMinNotional, _ := strconv.ParseFloat(minNotional, 64)
+		fQuantity, _ := strconv.ParseFloat(req.Quantity, 64)
+		fPrice, _ := strconv.ParseFloat(res.Price, 64)
+		notional := fQuantity * fPrice
+		if notional < fMinNotional {
+			return nil, errors.New(fmt.Sprintf("quantity * avgPrice less than min notional : %f * %f %s/%s < %f %s", fQuantity, fPrice, baseAsset, quoteAsset, fMinNotional, quoteAsset))
+		}
+
+		quoteQuantity = strconv.FormatFloat(notional, 'f', 8, 64)
+	}
+
 	order, err := c.binanceSpotClient.NewCreateOrderService().Symbol(req.Symbol).
-		Side(req.Side).Type(binance.OrderTypeMarket).TimeInForce(binance.TimeInForceTypeGTC).
-		Quantity(req.Quantity).Do(ctx)
+		Side(req.Side).Type(binance.OrderTypeMarket).
+		QuoteOrderQty(quoteQuantity).Do(ctx)
 
 	if err != nil {
 		return nil, err
 	}
 
-	var resp *TradeResp
+	var resp TradeResp
 
 	copier.Copy(&resp, order)
 
-	return resp, nil
+	return &resp, nil
 }
 
 type GetOrderReq struct {
@@ -122,24 +176,25 @@ type GetOrderReq struct {
 }
 
 type GetOrderResp struct {
-	Symbol              string `json:"symbol"`
-	OrderId             int64  `json:"orderId"`
-	OrderListId         int64  `json:"orderListId"`
-	ClientOrderId       string `json:"clientOrderId"`
-	Price               string `json:"price"`
-	OrigQty             string `json:"origQty"`
-	ExecutedQty         string `json:"executedQty"`
-	CummulativeQuoteQty string `json:"cummulativeQuoteQty"`
-	Status              string `json:"status"`
-	TimeInForce         string `json:"timeInForce"`
-	Type                string `json:"type"`
-	Side                string `json:"side"`
-	StopPrice           string `json:"stopPrice"`
-	IcebergQty          string `json:"icebergQty"`
-	Time                int64  `json:"time"`
-	UpdateTime          int64  `json:"updateTime"`
-	IsWorking           bool   `json:"isWorking"`
-	OrigQuoteOrderQty   string `json:"origQuoteOrderQty"`
+	Symbol                   string                  `json:"symbol"`
+	OrderID                  int64                   `json:"orderId"`
+	OrderListId              int64                   `json:"orderListId"`
+	ClientOrderID            string                  `json:"clientOrderId"`
+	Price                    string                  `json:"price"`
+	OrigQuantity             string                  `json:"origQty"`
+	ExecutedQuantity         string                  `json:"executedQty"`
+	CummulativeQuoteQuantity string                  `json:"cummulativeQuoteQty"`
+	Status                   binance.OrderStatusType `json:"status"`
+	TimeInForce              binance.TimeInForceType `json:"timeInForce"`
+	Type                     binance.OrderType       `json:"type"`
+	Side                     binance.SideType        `json:"side"`
+	StopPrice                string                  `json:"stopPrice"`
+	IcebergQuantity          string                  `json:"icebergQty"`
+	Time                     int64                   `json:"time"`
+	UpdateTime               int64                   `json:"updateTime"`
+	IsWorking                bool                    `json:"isWorking"`
+	IsIsolated               bool                    `json:"isIsolated"`
+	OrigQuoteOrderQuantity   string                  `json:"origQuoteOrderQty"`
 }
 
 func (c *SpotClient) getOrder(ctx context.Context, req *GetOrderReq) (*GetOrderResp, error) {
@@ -147,10 +202,12 @@ func (c *SpotClient) getOrder(ctx context.Context, req *GetOrderReq) (*GetOrderR
 	if err != nil {
 		return nil, err
 	}
-	var resp *GetOrderResp
+
+	var resp GetOrderResp
+
 	copier.Copy(&resp, order)
 
-	return resp, err
+	return &resp, err
 }
 
 type OrderListReq struct {
@@ -222,8 +279,8 @@ func (c *SpotClient) CancelOrder(ctx context.Context, req *CancelReq) (*CancelRe
 	if err != nil {
 		return nil, err
 	}
-	var resp *CancelResp
+	var resp CancelResp
 	copier.Copy(&resp, order)
 
-	return resp, nil
+	return &resp, nil
 }

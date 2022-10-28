@@ -39,3 +39,74 @@ func TestEstQuote(t *testing.T) {
 	})
 
 }
+
+func TestOrderList(t *testing.T) {
+	convey.Convey("TestOrderList", t, func(convCtx convey.C) {
+		resp, err := sCli.OrderList(context.Background(), &OrderListReq{
+			Symbol:    "EOSBTC",
+			StartTime: 0,
+			EndTime:   0,
+			Limit:     500,
+		})
+
+		if err != nil {
+			t.Fatalf(`test TestOrderList fail %s`, err.Error())
+		}
+		for _, li := range resp.Data {
+			log.Printf("result:%+v", li)
+		}
+		convCtx.So(len(resp.Data), convey.ShouldBeGreaterThan, 0)
+	})
+}
+
+func TestGetOrder(t *testing.T) {
+	convey.Convey("TestGetOrder", t, func(convCtx convey.C) {
+		resp, err := sCli.getOrder(context.Background(), &GetOrderReq{
+			Symbol:  "EOSBTC",
+			OrderId: 659854195,
+		})
+
+		if err != nil {
+			t.Fatalf(`test TestGetOrder fail %s`, err.Error())
+		}
+
+		log.Printf("result:%+v", resp)
+
+		convCtx.So(resp.CummulativeQuoteQuantity, convey.ShouldEqual, "0.00384000")
+	})
+}
+
+func TestTrade(t *testing.T) {
+	convey.Convey("TestTrade", t, func(convCtx convey.C) {
+		resp, err := sCli.Trade(context.Background(), &TradeReq{
+			Symbol:   "LUNCBUSD",
+			Side:     "BUY",
+			Quantity: "10",
+		})
+
+		if err != nil {
+			t.Fatalf(`test TestTrade BUY fail %s`, err.Error())
+		}
+
+		log.Printf("buy result:%+v", resp)
+
+		sellQuantity := resp.ExecutedQuantity
+
+		convCtx.So(resp.Status, convey.ShouldEqual, "FILLED")
+
+		resp, err = sCli.Trade(context.Background(), &TradeReq{
+			Symbol:   "LUNCBUSD",
+			Side:     "SELL",
+			Quantity: sellQuantity,
+		})
+
+		if err != nil {
+			t.Fatalf(`test TestTrade SELL fail %s`, err.Error())
+		}
+
+		log.Printf("sell result:%+v", resp)
+
+		convCtx.So(resp.Status, convey.ShouldEqual, "FILLED")
+
+	})
+}
