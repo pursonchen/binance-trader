@@ -110,3 +110,56 @@ func TestTrade(t *testing.T) {
 
 	})
 }
+
+func TestTradedFee(t *testing.T) {
+	convey.Convey("TestTradedFee", t, func(convCtx convey.C) {
+		resp, err := sCli.TradeFee(context.Background(), &TradeFeeReq{
+			Symbol: "EOSBTC",
+		})
+
+		if err != nil {
+			t.Fatalf(`test TestGetOrder fail %s`, err.Error())
+		}
+
+		log.Printf("result:%+v", resp.Data[0])
+
+		convCtx.So(resp.Data[0].Symbol, convey.ShouldEqual, "EOSBTC")
+	})
+}
+
+func TestWithdraw(t *testing.T) {
+	convey.Convey("TestWithdraw", t, func(convCtx convey.C) {
+		resp, err := sCli.Withdraw(context.Background(), &WithdrawReq{
+			Coin:            "EOS",
+			Address:         "pursonpurson",
+			AddressTag:      "",
+			Amount:          "10",
+			WithdrawOrderId: "test",
+		})
+
+		if err != nil {
+			t.Fatalf(`test TestWithdraw fail %s`, err.Error())
+		}
+
+		log.Printf("result:%+v", resp.Id)
+
+		convCtx.So(resp.Id, convey.ShouldNotBeEmpty)
+	})
+}
+
+func TestWithdrawList(t *testing.T) {
+	convey.Convey("TestWithdrawList", t, func(convCtx convey.C) {
+		resp, err := sCli.WithdrawHistory(context.Background(), &WithdrawHistoryReq{
+			Coin:            "EOS",
+			WithdrawOrderId: "",
+		})
+
+		if err != nil {
+			t.Fatalf(`test TestWithdrawList fail %s`, err.Error())
+		}
+
+		log.Printf("result:%+v", resp.Data[0])
+
+		convCtx.So(resp.Data[0].Coin, convey.ShouldEqual, "EOS")
+	})
+}

@@ -70,9 +70,10 @@ SELL 卖出
 */
 
 type TradeReq struct {
-	Symbol   string           `json:"symbol"`
-	Side     binance.SideType `json:"side"` // BUY SELL
-	Quantity string           `json:"quantity"`
+	Symbol           string           `json:"symbol"`
+	Side             binance.SideType `json:"side"` // BUY SELL
+	Quantity         string           `json:"quantity"`
+	NewClientOrderId string           `json:"newClientOrderId"`
 }
 
 type TradeResp struct {
@@ -156,7 +157,7 @@ func (c *SpotClient) Trade(ctx context.Context, req *TradeReq) (*TradeResp, erro
 	}
 
 	order, err := c.binanceSpotClient.NewCreateOrderService().Symbol(req.Symbol).
-		Side(req.Side).Type(binance.OrderTypeMarket).
+		Side(req.Side).Type(binance.OrderTypeMarket).NewClientOrderID(req.NewClientOrderId).
 		QuoteOrderQty(quoteQuantity).Do(ctx)
 
 	if err != nil {
@@ -283,4 +284,70 @@ func (c *SpotClient) CancelOrder(ctx context.Context, req *CancelReq) (*CancelRe
 	copier.Copy(&resp, order)
 
 	return &resp, nil
+}
+
+type WithdrawReq struct {
+	Coin            string `json:"coin"`
+	Address         string `json:"address"`
+	AddressTag      string `json:"addressTag"`
+	Amount          string `json:"amount"`
+	WithdrawOrderId string `json:"withdrawOrderId"`
+}
+
+type WithdrawResp struct {
+	Id string
+}
+
+func (c *SpotClient) Withdraw(ctx context.Context, req *WithdrawReq) (*WithdrawResp, error) {
+	withdrawId, err := c.binanceSpotClient.NewCreateWithdrawService().
+		Coin(req.Coin).Address(req.Address).AddressTag(req.AddressTag).
+		Amount(req.Amount).WithdrawOrderID(req.WithdrawOrderId).Do(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &WithdrawResp{Id: withdrawId.ID}, nil
+
+}
+
+type TradeFeeReq struct {
+	Symbol string `json:"symbol,omitempty"`
+}
+
+type TradeFeeResp struct {
+	Data []*binance.TradeFeeDetails `json:"data"`
+}
+
+func (c *SpotClient) TradeFee(ctx context.Context, req *TradeFeeReq) (*TradeFeeResp, error) {
+	feeDetails, err := c.binanceSpotClient.NewTradeFeeService().Symbol(req.Symbol).Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TradeFeeResp{Data: feeDetails}, nil
+}
+
+type WithdrawHistoryReq struct {
+	Coin            string `json:"coin"`
+	WithdrawOrderId string `json:"withdrawOrderId"`
+}
+
+type WithdrawHistoryResp struct {
+	Data []*binance.Withdraw `json:"data"`
+}
+
+func (c *SpotClient) WithdrawHistory(ctx context.Context, req *WithdrawHistoryReq) (*WithdrawHistoryResp, error) {
+	withdrawList, err := c.binanceSpotClient.NewListWithdrawsService().Coin(req.Coin).
+		WithdrawOrderId(req.WithdrawOrderId).Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp []*binance.Withdraw
+	for _, withdraw := range withdrawList {
+		resp = append(resp, withdraw)
+	}
+
+	return &WithdrawHistoryResp{Data: resp}, nil
 }
