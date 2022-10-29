@@ -79,9 +79,10 @@ func TestGetOrder(t *testing.T) {
 func TestTrade(t *testing.T) {
 	convey.Convey("TestTrade", t, func(convCtx convey.C) {
 		resp, err := sCli.Trade(context.Background(), &TradeReq{
-			Symbol:   "LUNCBUSD",
-			Side:     "BUY",
-			Quantity: "10",
+			Symbol:           "LUNCBUSD",
+			Side:             "BUY",
+			Quantity:         "10",
+			NewClientOrderId: "",
 		})
 
 		if err != nil {
@@ -95,9 +96,10 @@ func TestTrade(t *testing.T) {
 		convCtx.So(resp.Status, convey.ShouldEqual, "FILLED")
 
 		resp, err = sCli.Trade(context.Background(), &TradeReq{
-			Symbol:   "LUNCBUSD",
-			Side:     "SELL",
-			Quantity: sellQuantity,
+			Symbol:           "LUNCBUSD",
+			Side:             "SELL",
+			Quantity:         sellQuantity,
+			NewClientOrderId: "",
 		})
 
 		if err != nil {
