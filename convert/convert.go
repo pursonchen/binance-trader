@@ -198,7 +198,7 @@ type GetOrderResp struct {
 	OrigQuoteOrderQuantity   string                  `json:"origQuoteOrderQty"`
 }
 
-func (c *SpotClient) getOrder(ctx context.Context, req *GetOrderReq) (*GetOrderResp, error) {
+func (c *SpotClient) GetOrder(ctx context.Context, req *GetOrderReq) (*GetOrderResp, error) {
 	order, err := c.binanceSpotClient.NewGetOrderService().Symbol(req.Symbol).OrderID(req.OrderId).Do(ctx)
 	if err != nil {
 		return nil, err

@@ -14,6 +14,10 @@ BINANCE_SECRET_KEY=
 PROXY_URL=
 ```
 
+## import 
+```
+go get github.com/pursonchen/binance-trader
+```
 
 ## Caution
 - self design pkg must be put in the GOPATH/src/github.com/pursonchen/xxx 
