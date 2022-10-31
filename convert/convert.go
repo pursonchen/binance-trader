@@ -199,16 +199,31 @@ type GetOrderResp struct {
 }
 
 func (c *SpotClient) GetOrder(ctx context.Context, req *GetOrderReq) (*GetOrderResp, error) {
-	order, err := c.binanceSpotClient.NewGetOrderService().Symbol(req.Symbol).OrderID(req.OrderId).Do(ctx)
-	if err != nil {
-		return nil, err
+
+	if req.OrderId > 0 {
+		order, err := c.binanceSpotClient.NewGetOrderService().Symbol(req.Symbol).OrderID(req.OrderId).Do(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		var resp GetOrderResp
+
+		copier.Copy(&resp, order)
+
+		return &resp, err
+	} else {
+		order, err := c.binanceSpotClient.NewGetOrderService().Symbol(req.Symbol).Do(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		var resp GetOrderResp
+
+		copier.Copy(&resp, order)
+
+		return &resp, err
 	}
 
-	var resp GetOrderResp
-
-	copier.Copy(&resp, order)
-
-	return &resp, err
 }
 
 type OrderListReq struct {
