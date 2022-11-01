@@ -366,3 +366,39 @@ func (c *SpotClient) WithdrawHistory(ctx context.Context, req *WithdrawHistoryRe
 
 	return &WithdrawHistoryResp{Data: resp}, nil
 }
+
+type Kline struct {
+	OpenTime                 int64  `json:"openTime"`
+	Open                     string `json:"open"`
+	High                     string `json:"high"`
+	Low                      string `json:"low"`
+	Close                    string `json:"close"`
+	Volume                   string `json:"volume"`
+	CloseTime                int64  `json:"closeTime"`
+	QuoteAssetVolume         string `json:"quoteAssetVolume"`
+	TradeNum                 int64  `json:"tradeNum"`
+	TakerBuyBaseAssetVolume  string `json:"takerBuyBaseAssetVolume"`
+	TakerBuyQuoteAssetVolume string `json:"takerBuyQuoteAssetVolume"`
+}
+
+type KlinesOneSecReq struct {
+	Symbol string `json:"symbol"`
+}
+
+type KlinesOneSecResp struct {
+	Data []*binance.Kline `json:"data"`
+}
+
+func (c *SpotClient) Klines(ctx context.Context, req *KlinesOneSecReq) (*KlinesOneSecResp, error) {
+	klines, err := c.binanceSpotClient.NewKlinesService().Symbol(req.Symbol).Interval("1s").Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp []*binance.Kline
+	for _, data := range klines {
+		resp = append(resp, data)
+	}
+
+	return &KlinesOneSecResp{Data: resp}, nil
+}

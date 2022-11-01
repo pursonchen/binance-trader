@@ -61,7 +61,7 @@ func TestOrderList(t *testing.T) {
 
 func TestGetOrder(t *testing.T) {
 	convey.Convey("TestGetOrder", t, func(convCtx convey.C) {
-		resp, err := sCli.getOrder(context.Background(), &GetOrderReq{
+		resp, err := sCli.GetOrder(context.Background(), &GetOrderReq{
 			Symbol:  "EOSBTC",
 			OrderId: 659854195,
 		})
@@ -163,5 +163,21 @@ func TestWithdrawList(t *testing.T) {
 		log.Printf("result:%+v", resp.Data[0])
 
 		convCtx.So(resp.Data[0].Coin, convey.ShouldEqual, "EOS")
+	})
+}
+
+func TestKlines(t *testing.T) {
+	convey.Convey("TestKlines", t, func(convCtx convey.C) {
+		resp, err := sCli.Klines(context.Background(), &KlinesOneSecReq{
+			Symbol: "EOSUSDT",
+		})
+
+		if err != nil {
+			t.Fatalf(`test TestKlines fail %s`, err.Error())
+		}
+
+		log.Printf("result:%+v", resp.Data[0])
+
+		convCtx.So(resp.Data[0].Close, convey.ShouldBeGreaterThan, 0)
 	})
 }
