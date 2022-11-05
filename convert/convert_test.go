@@ -178,6 +178,47 @@ func TestKlines(t *testing.T) {
 
 		log.Printf("result:%+v", resp.Data[0])
 
-		convCtx.So(resp.Data[0].Close, convey.ShouldBeGreaterThan, 0)
+		convCtx.So(resp.Data[0].Close, convey.ShouldNotBeNil)
+	})
+}
+
+func TestTickerPrice(t *testing.T) {
+	convey.Convey("TestTickerPrice", t, func(convCtx convey.C) {
+		resp, err := sCli.GetTickerPrice(context.Background(), &NewPriceReq{
+			Symbol: "FILUSDT",
+		})
+
+		if err != nil {
+			t.Fatalf(`test  get specific TickerPrice fail %s`, err.Error())
+		}
+
+		log.Printf("specific result:%+v", resp.Data[0])
+
+		convCtx.So(resp.Data[0].Symbol, convey.ShouldEqual, "FILUSDT")
+
+		resp, err = sCli.GetTickerPrice(context.Background(), &NewPriceReq{})
+
+		if err != nil {
+			t.Fatalf(`test get all TickerPrice fail %s`, err.Error())
+		}
+
+		log.Printf("all price result:%+v", resp.Data[0])
+
+		convCtx.So(resp.Data[0].Symbol, convey.ShouldEqual, "ETHBTC")
+
+		resp, err = sCli.GetTickerPrice(context.Background(), &NewPriceReq{
+			Symbols: []string{"ETHBTC", "FILUSDT"},
+		})
+
+		if err != nil {
+			t.Fatalf(`test 2 more TickerPrice fail %s`, err.Error())
+		}
+
+		log.Printf("all price result:%+v", resp.Data[0])
+		log.Printf("all price result:%+v", resp.Data[1])
+
+		convCtx.So(resp.Data[0].Symbol, convey.ShouldEqual, "ETHBTC")
+		convCtx.So(resp.Data[1].Symbol, convey.ShouldEqual, "FILUSDT")
+
 	})
 }

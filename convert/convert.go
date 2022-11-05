@@ -402,3 +402,51 @@ func (c *SpotClient) Klines(ctx context.Context, req *KlinesOneSecReq) (*KlinesO
 
 	return &KlinesOneSecResp{Data: resp}, nil
 }
+
+type NewPriceReq struct {
+	Symbol  string   `json:"symbol,omitempty"`
+	Symbols []string `json:"symbols,omitempty"`
+}
+
+type NewPriceResp struct {
+	Data []*binance.SymbolPrice `json:"data"`
+}
+
+func (c *SpotClient) GetTickerPrice(ctx context.Context, req *NewPriceReq) (*NewPriceResp, error) {
+	if req.Symbols != nil && len(req.Symbols) > 0 {
+		priceInfo, err := c.binanceSpotClient.NewListPricesService().Symbols(req.Symbols).Do(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		var resp []*binance.SymbolPrice
+		for _, data := range priceInfo {
+			resp = append(resp, data)
+		}
+
+		return &NewPriceResp{Data: resp}, nil
+	} else if req.Symbol != "" {
+		priceInfo, err := c.binanceSpotClient.NewListPricesService().Symbol(req.Symbol).Do(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		var resp []*binance.SymbolPrice
+		for _, data := range priceInfo {
+			resp = append(resp, data)
+		}
+
+		return &NewPriceResp{Data: resp}, nil
+	}
+	priceInfo, err := c.binanceSpotClient.NewListPricesService().Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp []*binance.SymbolPrice
+	for _, data := range priceInfo {
+		resp = append(resp, data)
+	}
+
+	return &NewPriceResp{Data: resp}, nil
+}
