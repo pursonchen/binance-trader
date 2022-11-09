@@ -451,3 +451,25 @@ func (c *SpotClient) GetTickerPrice(ctx context.Context, req *NewPriceReq) (*New
 
 	return &NewPriceResp{Data: resp}, nil
 }
+
+type UserAssetReq struct {
+	Asset string `json:"asset"`
+}
+
+type UserAssetResp struct {
+	Data []*binance.UserAssetV3 `json:"data"`
+}
+
+func (c *SpotClient) GetUserAsset(ctx context.Context, req *UserAssetReq) (*UserAssetResp, error) {
+	assets, err := c.binanceSpotClient.NewGetUserAssetService().Asset(req.Asset).Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp []*binance.UserAssetV3
+	for _, data := range assets {
+		resp = append(resp, data)
+	}
+
+	return &UserAssetResp{Data: resp}, nil
+}

@@ -27,8 +27,8 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/pursonchen/go-binance/v2 v2.2.1 h1:/n/ld8NRIRjp0rZ6PaqBOvlISHW5DVV17VdwNsTkCrA=
-github.com/pursonchen/go-binance/v2 v2.2.1/go.mod h1:Tzs1RtdOi245fbthXDeSCyP7XkEf3C97REcN4XhiL5c=
+github.com/pursonchen/go-binance/v2 v2.2.3 h1:/3U44B8Ljmn3GFd1a2WAUrt3Zbfazm6GlVExgXQ2XAg=
+github.com/pursonchen/go-binance/v2 v2.2.3/go.mod h1:Tzs1RtdOi245fbthXDeSCyP7XkEf3C97REcN4XhiL5c=
 github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZVejAe8=
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/smartystreets/assertions v1.2.0 h1:42S6lae5dvLc7BrLu/0ugRtcFVjoJNMC/N3yZFZkDFs=

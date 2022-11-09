@@ -2,12 +2,14 @@ package convert
 
 import (
 	"context"
+	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/pursonchen/go-binance/v2"
 	"github.com/smartystreets/goconvey/convey"
 	"log"
 	"os"
 	"testing"
+	"time"
 )
 
 var sCli *SpotClient
@@ -135,8 +137,8 @@ func TestWithdraw(t *testing.T) {
 			Coin:            "EOS",
 			Address:         "pursonpurson",
 			AddressTag:      "",
-			Amount:          "10",
-			WithdrawOrderId: "test",
+			Amount:          "0.2",
+			WithdrawOrderId: fmt.Sprintf("withdraw:order:1001:%d", time.Now().UnixMicro()),
 		})
 
 		if err != nil {
@@ -219,6 +221,23 @@ func TestTickerPrice(t *testing.T) {
 
 		convCtx.So(resp.Data[0].Symbol, convey.ShouldEqual, "ETHBTC")
 		convCtx.So(resp.Data[1].Symbol, convey.ShouldEqual, "FILUSDT")
+
+	})
+}
+
+func TestGetUserAssets(t *testing.T) {
+	convey.Convey("TestGetUserAssets", t, func(convCtx convey.C) {
+		resp, err := sCli.GetUserAsset(context.Background(), &UserAssetReq{
+			Asset: "EOS",
+		})
+
+		if err != nil {
+			t.Fatalf(`test  get specific TickerPrice fail %s`, err.Error())
+		}
+
+		log.Printf("specific result:%+v", resp.Data[0])
+
+		convCtx.So(resp.Data[0].Asset, convey.ShouldEqual, "EOS")
 
 	})
 }
