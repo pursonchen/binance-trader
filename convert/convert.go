@@ -70,10 +70,11 @@ SELL 卖出
 */
 
 type TradeReq struct {
-	Symbol           string           `json:"symbol"`
-	Side             binance.SideType `json:"side"` // BUY SELL
-	Quantity         string           `json:"quantity"`
-	NewClientOrderId string           `json:"newClientOrderId"`
+	Symbol           string                   `json:"symbol"`
+	Side             binance.SideType         `json:"side"` // BUY SELL
+	Quantity         string                   `json:"quantity"`
+	NewClientOrderId string                   `json:"newClientOrderId"`
+	NewOrderRespType binance.NewOrderRespType `json:"newOrderRespType"`
 }
 
 type TradeResp struct {
@@ -158,7 +159,7 @@ func (c *SpotClient) Trade(ctx context.Context, req *TradeReq) (*TradeResp, erro
 
 	order, err := c.binanceSpotClient.NewCreateOrderService().Symbol(req.Symbol).
 		Side(req.Side).Type(binance.OrderTypeMarket).NewClientOrderID(req.NewClientOrderId).
-		QuoteOrderQty(quoteQuantity).Do(ctx)
+		QuoteOrderQty(quoteQuantity).NewOrderRespType(req.NewOrderRespType).Do(ctx)
 
 	if err != nil {
 		return nil, err
