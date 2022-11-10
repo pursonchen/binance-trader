@@ -36,6 +36,7 @@ func TestEstQuote(t *testing.T) {
 		}
 
 		log.Printf("result:%+v", resp.Data[0])
+		log.Printf("result:%+v", resp.MinNotional)
 		convCtx.So(resp.Data[0].Symbol, convey.ShouldNotBeEmpty)
 	})
 

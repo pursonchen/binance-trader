@@ -22,7 +22,8 @@ type EstQuoteReq struct {
 }
 
 type EstQuoteResp struct {
-	Data []*binance.BookTicker `json:"data"`
+	MinNotional string                `json:"minNotional"`
+	Data        []*binance.BookTicker `json:"data"`
 }
 
 func (c *SpotClient) EstQuote(ctx context.Context, req *EstQuoteReq) (*EstQuoteResp, error) {
@@ -38,8 +39,26 @@ func (c *SpotClient) EstQuote(ctx context.Context, req *EstQuoteReq) (*EstQuoteR
 		resp = append(resp, li)
 	}
 
+	exchangeInfo, err := c.binanceSpotClient.NewExchangeInfoService().Symbol(req.Symbol).Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var minNotional string
+
+	if len(exchangeInfo.Symbols) == 0 || exchangeInfo.Symbols == nil {
+		return nil, errors.New("exchangeInfo.Symbols fail")
+	}
+
+	for _, filter := range exchangeInfo.Symbols[0].Filters {
+		if filter["filterType"] == "MIN_NOTIONAL" {
+			minNotional = filter["minNotional"].(string)
+		}
+	}
+
 	return &EstQuoteResp{
-		Data: resp,
+		Data:        resp,
+		MinNotional: minNotional,
 	}, nil
 }
 
