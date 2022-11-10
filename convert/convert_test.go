@@ -28,16 +28,15 @@ func TestEstQuote(t *testing.T) {
 
 	convey.Convey("TestEstQuote", t, func(convCtx convey.C) {
 		resp, err := sCli.EstQuote(context.Background(), &EstQuoteReq{
-			BaseCcy:  "FIL",
-			QuoteCcy: "USDT",
+			Symbol: "FILUSDT",
 		})
 
 		if err != nil {
 			t.Fatalf(`test EstQuote fail %s`, err.Error())
 		}
 
-		log.Printf("result:%+v", resp)
-		convCtx.So(resp.Price, convey.ShouldNotBeEmpty)
+		log.Printf("result:%+v", resp.Data[0])
+		convCtx.So(resp.Data[0].Symbol, convey.ShouldNotBeEmpty)
 	})
 
 }

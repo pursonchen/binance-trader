@@ -18,33 +18,28 @@ func NewSpotClient(spotClient *binance.Client) *SpotClient {
 }
 
 type EstQuoteReq struct {
-	BaseCcy  string `json:"baseCcy"`
-	QuoteCcy string `json:"quoteCcy"`
+	Symbol string `json:"symbol"`
 }
 
 type EstQuoteResp struct {
-	Price string `json:"price"`
-	Mins  int64  `json:"mins"`
+	Data []*binance.BookTicker `json:"data"`
 }
-
-var StableCoins = [2]string{"USDT", "BUSD"}
 
 func (c *SpotClient) EstQuote(ctx context.Context, req *EstQuoteReq) (*EstQuoteResp, error) {
 
-	// 目前支持稳定币兑换
-	if req.BaseCcy != StableCoins[0] && req.QuoteCcy != StableCoins[0] {
-		return nil, errors.New("coin not support")
-	}
-
-	res, err := c.binanceSpotClient.NewAveragePriceService().Symbol(req.BaseCcy + req.QuoteCcy).Do(ctx)
+	list, err := c.binanceSpotClient.NewListBookTickersService().Symbol(req.Symbol).Do(ctx)
 
 	if err != nil {
 		return nil, err
 	}
 
+	var resp []*binance.BookTicker
+	for _, li := range list {
+		resp = append(resp, li)
+	}
+
 	return &EstQuoteResp{
-		Mins:  res.Mins,
-		Price: res.Price,
+		Data: resp,
 	}, nil
 }
 
