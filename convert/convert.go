@@ -242,10 +242,9 @@ func (c *SpotClient) GetOrder(ctx context.Context, req *GetOrderReq) (*GetOrderR
 }
 
 type OrderListReq struct {
-	Symbol    string `json:"symbol"`
-	StartTime int64  `json:"startTime,omitempty"`
-	EndTime   int64  `json:"endTime,omitempty"`
-	Limit     int    `json:"limit"`
+	Symbol  string `json:"symbol"`
+	OrderId int64  `json:"orderId"`
+	Limit   int    `json:"limit"`
 }
 
 type OrderListResp struct {
@@ -254,7 +253,7 @@ type OrderListResp struct {
 
 func (c *SpotClient) OrderList(ctx context.Context, req *OrderListReq) (*OrderListResp, error) {
 
-	list, err := c.binanceSpotClient.NewListOrdersService().Symbol(req.Symbol).Limit(req.Limit).Do(ctx)
+	list, err := c.binanceSpotClient.NewListOrdersService().Symbol(req.Symbol).OrderID(req.OrderId).Limit(req.Limit).Do(ctx)
 
 	if err != nil {
 		return nil, err
